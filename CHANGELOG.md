@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Feedback submission form as the index page (`/`): name, email, and feedback fields that
+  **unlock in sequence** as each prior field becomes valid, guiding the user step by step.
+- Clean per-field validation with Zod (`src/lib/feedback.ts`) and react-hook-form; inline
+  errors on blur, character counter, and success/error states on submit.
+- Component tests for the sequential-unlock flow and validation (`feedback-form.test.tsx`).
 - Initial Next.js scaffold (TypeScript, App Router, Tailwind CSS v4, ESLint, `src/`, `@/*` alias).
 - Type-safe, validated environment variables via `@t3-oss/env-nextjs` + Zod (`src/env.ts`).
 - Typed backend API client `apiFetch` (`src/lib/api.ts`) using `NEXT_PUBLIC_API_URL`.
