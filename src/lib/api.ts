@@ -1,5 +1,8 @@
 import { env } from "@/env";
-import { getToken } from "@/lib/auth-token";
+import { clearToken, getToken } from "@/lib/auth-token";
+
+/** Dispatched when an authenticated request is rejected (expired/invalid token). */
+export const UNAUTHORIZED_EVENT = "feedige:unauthorized";
 
 /** Thrown when the backend responds with a non-2xx status. */
 export class ApiError extends Error {
@@ -50,6 +53,14 @@ export async function apiFetch<T>(
     : await response.text();
 
   if (!response.ok) {
+    // An authenticated request that 401s means the token is expired/invalid —
+    // clear it and let the app react (e.g. the AuthProvider logs out).
+    if (response.status === 401 && token) {
+      clearToken();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
+      }
+    }
     throw new ApiError(
       response.status,
       `Request to ${path} failed with status ${response.status}`,

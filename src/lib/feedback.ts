@@ -32,13 +32,30 @@ export const feedbackSchema = z.object({
 
 export type FeedbackInput = z.infer<typeof feedbackSchema>;
 
-/** Submitted feedback as returned by the backend. */
-export interface Feedback extends FeedbackInput {
-  id: string;
-  createdAt: string;
-}
+// Response shape returned by the backend (validated at the boundary, not trusted).
+const feedbackResponseSchema = z.object({
+  id: z.string(),
+  rawText: z.string(),
+  source: z.string(),
+  status: z.string(),
+  submittedBy: z
+    .object({
+      id: z.string(),
+      name: z.string().nullable(),
+      email: z.string(),
+    })
+    .nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export type Feedback = z.infer<typeof feedbackResponseSchema>;
 
 /** POST the feedback to the backend API. */
-export function submitFeedback(input: FeedbackInput): Promise<Feedback> {
-  return apiFetch<Feedback>("/feedback", { method: "POST", body: input });
+export async function submitFeedback(input: FeedbackInput): Promise<Feedback> {
+  const data = await apiFetch<unknown>("/feedback", {
+    method: "POST",
+    body: input,
+  });
+  return feedbackResponseSchema.parse(data);
 }

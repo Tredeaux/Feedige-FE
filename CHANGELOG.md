@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- The admin panel is now gated on role (`admin`/`triage`), not just "authenticated" — an
+  authenticated member sees a no-access message instead of the panel.
+- `apiFetch` clears the token and emits `feedige:unauthorized` on a 401 to a token-bearing
+  request; `AuthProvider` listens and logs out, so an expired token no longer strands the UI.
+- Backend responses are validated with Zod at the boundary (`lib/auth.ts`, `lib/feedback.ts`)
+  instead of being trusted via a type cast.
+
 ### Added
 
 - Admin panel authentication: sign-in / sign-up forms gating the `/admin` panel, an

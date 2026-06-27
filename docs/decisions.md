@@ -26,6 +26,12 @@ wiring. Add refresh-token rotation and route-level guards (middleware) then.
 **Rejected:** httpOnly cookies now (more cross-origin setup than "simple" warrants in
 dev); a data library (TanStack Query) for auth state (overkill for one session object).
 
+**Hardening added (audit follow-up):** the admin panel is gated on `role ∈ PANEL_ROLES`
+(`{admin, triage}`), not merely "authenticated"; `apiFetch` clears the token and emits a
+`feedige:unauthorized` event on a 401 to a token-bearing request (the `AuthProvider` logs
+out in response); and backend responses are validated with Zod at the boundary
+(`src/lib/auth.ts`, `src/lib/feedback.ts`) rather than trusted via a cast.
+
 ---
 
 ## Sequential field unlocking for the feedback form

@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { UNAUTHORIZED_EVENT } from "@/lib/api";
 import { clearToken, getToken, setToken } from "@/lib/auth-token";
 import {
   type AuthUser,
@@ -82,6 +83,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setStatus("unauthenticated");
   }, []);
+
+  // Log out when any authenticated request reports the token is no longer valid.
+  useEffect(() => {
+    const onUnauthorized = () => logout();
+    window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+    return () => window.removeEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, status, login, register, logout }}>
