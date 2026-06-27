@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Admin triage table (`FeedbackTable`): a paginated (20/page), searchable, status-filterable,
+  sortable table of all feedback, with status/sentiment/priority tags and submitter info. Fetches
+  the guarded `GET /api/v1/feedback`; loading/empty/error states; replaces the admin placeholder.
+  Tests for row rendering and the empty state.
+
 ### Security
 
 - The admin panel is now gated on role (`admin`/`triage`), not just "authenticated" — an

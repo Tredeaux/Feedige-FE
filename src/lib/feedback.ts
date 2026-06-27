@@ -59,3 +59,72 @@ export async function submitFeedback(input: FeedbackInput): Promise<Feedback> {
   });
   return feedbackResponseSchema.parse(data);
 }
+
+// ---- Triage list (GET /feedback) ----
+
+export const FEEDBACK_STATUSES = [
+  "pending",
+  "reviewed",
+  "actioned",
+  "archived",
+] as const;
+export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
+
+export const FEEDBACK_SORT_FIELDS = [
+  "createdAt",
+  "updatedAt",
+  "status",
+] as const;
+export type FeedbackSortField = (typeof FEEDBACK_SORT_FIELDS)[number];
+
+export interface ListFeedbackQuery {
+  page: number;
+  pageSize: number;
+  status?: string;
+  search?: string;
+  sortBy: FeedbackSortField;
+  sortOrder: "asc" | "desc";
+}
+
+const feedbackListItemSchema = z.object({
+  id: z.string(),
+  rawText: z.string(),
+  source: z.string(),
+  status: z.string(),
+  submittedBy: z
+    .object({ id: z.string(), name: z.string().nullable(), email: z.string() })
+    .nullable(),
+  latestAnalysis: z
+    .object({ sentiment: z.string(), priority: z.string() })
+    .nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+const paginatedFeedbackSchema = z.object({
+  data: z.array(feedbackListItemSchema),
+  page: z.number(),
+  pageSize: z.number(),
+  total: z.number(),
+  totalPages: z.number(),
+});
+
+export type FeedbackListItem = z.infer<typeof feedbackListItemSchema>;
+export type PaginatedFeedback = z.infer<typeof paginatedFeedbackSchema>;
+
+/** Fetch the paginated triage list (requires a triage/admin token). */
+export async function listFeedback(
+  query: ListFeedbackQuery,
+): Promise<PaginatedFeedback> {
+  const params = new URLSearchParams({
+    page: String(query.page),
+    pageSize: String(query.pageSize),
+    sortBy: query.sortBy,
+    sortOrder: query.sortOrder,
+  });
+  if (query.status) params.set("status", query.status);
+  if (query.search) params.set("search", query.search);
+
+  const data = await apiFetch<unknown>(`/feedback?${params.toString()}`);
+  return paginatedFeedbackSchema.parse(data);
+}

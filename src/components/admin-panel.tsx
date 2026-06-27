@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/auth-provider";
 import { AuthForms } from "@/components/auth-forms";
+import { FeedbackTable } from "@/components/feedback-table";
 import { PANEL_ROLES } from "@/lib/auth";
 
 export function AdminPanel() {
@@ -56,10 +57,7 @@ export function AdminPanel() {
         </button>
       </div>
 
-      <div className="rounded-lg border border-dashed border-black/15 p-8 text-center text-sm text-zinc-500 dark:border-white/20 dark:text-zinc-400">
-        The triage view is coming soon — it will list submitted feedback with
-        its status and analysis once the backend list endpoint is available.
-      </div>
+      <FeedbackTable />
     </div>
   );
 }
