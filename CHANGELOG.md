@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- "Analyse" / "Re-analyse" action per row in the triage table — triggers the backend AI
+  analysis (`POST /api/v1/feedback/:id/analyze`), then refreshes to show the new
+  sentiment/priority tags. Per-row loading state and a clear message when AI isn't configured.
 - Admin triage table (`FeedbackTable`): a paginated (20/page), searchable, status-filterable,
   sortable table of all feedback, with status/sentiment/priority tags and submitter info. Fetches
   the guarded `GET /api/v1/feedback`; loading/empty/error states; replaces the admin placeholder.

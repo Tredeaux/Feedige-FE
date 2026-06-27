@@ -112,6 +112,11 @@ const paginatedFeedbackSchema = z.object({
 export type FeedbackListItem = z.infer<typeof feedbackListItemSchema>;
 export type PaginatedFeedback = z.infer<typeof paginatedFeedbackSchema>;
 
+/** Trigger AI analysis for a feedback item (requires a triage/admin token). */
+export async function analyzeFeedback(id: string): Promise<void> {
+  await apiFetch<unknown>(`/feedback/${id}/analyze`, { method: "POST" });
+}
+
 /** Fetch the paginated triage list (requires a triage/admin token). */
 export async function listFeedback(
   query: ListFeedbackQuery,

@@ -7,6 +7,7 @@ import {
   type FeedbackListItem,
   type FeedbackSortField,
   type PaginatedFeedback,
+  analyzeFeedback,
   listFeedback,
 } from "@/lib/feedback";
 
@@ -23,6 +24,12 @@ export function FeedbackTable() {
   const [result, setResult] = useState<PaginatedFeedback | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Analyze action: per-row in-flight id, a transient error, and a refresh key
+  // that re-runs the list fetch after a successful analysis.
+  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Debounce the search input; reset to the first page when it changes.
   useEffect(() => {
@@ -64,7 +71,24 @@ export function FeedbackTable() {
     return () => {
       active = false;
     };
-  }, [page, debouncedSearch, status, sortBy, sortOrder]);
+  }, [page, debouncedSearch, status, sortBy, sortOrder, refreshKey]);
+
+  async function analyze(id: string): Promise<void> {
+    setActionError(null);
+    setAnalyzingId(id);
+    try {
+      await analyzeFeedback(id);
+      setRefreshKey((k) => k + 1); // reload to show the new analysis
+    } catch (err) {
+      setActionError(
+        err instanceof ApiError && err.status === 503
+          ? "AI analysis isn't configured (set OPENAI_API_KEY on the backend)."
+          : "Analysis failed. Please try again.",
+      );
+    } finally {
+      setAnalyzingId(null);
+    }
+  }
 
   function changeStatus(value: string): void {
     setStatus(value);
@@ -112,6 +136,15 @@ export function FeedbackTable() {
         </select>
       </div>
 
+      {actionError && (
+        <p
+          role="alert"
+          className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-800 dark:bg-red-950 dark:text-red-300"
+        >
+          {actionError}
+        </p>
+      )}
+
       {/* Table */}
       <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/15">
         <table className="w-full text-left text-sm">
@@ -142,7 +175,14 @@ export function FeedbackTable() {
             ) : rows.length === 0 ? (
               <StateRow text="No feedback found." />
             ) : (
-              rows.map((item) => <Row key={item.id} item={item} />)
+              rows.map((item) => (
+                <Row
+                  key={item.id}
+                  item={item}
+                  analyzing={analyzingId === item.id}
+                  onAnalyze={() => void analyze(item.id)}
+                />
+              ))
             )}
           </tbody>
         </table>
@@ -172,7 +212,15 @@ export function FeedbackTable() {
   );
 }
 
-function Row({ item }: { item: FeedbackListItem }) {
+function Row({
+  item,
+  analyzing,
+  onAnalyze,
+}: {
+  item: FeedbackListItem;
+  analyzing: boolean;
+  onAnalyze: () => void;
+}) {
   return (
     <tr className="align-top transition-colors hover:bg-black/[.02] dark:hover:bg-white/[.03]">
       <td className="max-w-md px-4 py-3">
@@ -199,18 +247,32 @@ function Row({ item }: { item: FeedbackListItem }) {
         <Tag className={statusClass(item.status)}>{titleCase(item.status)}</Tag>
       </td>
       <td className="px-4 py-3">
-        {item.latestAnalysis ? (
-          <div className="flex flex-wrap gap-1">
-            <Tag className={sentimentClass(item.latestAnalysis.sentiment)}>
-              {titleCase(item.latestAnalysis.sentiment)}
-            </Tag>
-            <Tag className={priorityClass(item.latestAnalysis.priority)}>
-              {titleCase(item.latestAnalysis.priority)}
-            </Tag>
-          </div>
-        ) : (
-          <span className="text-zinc-400">Not analysed</span>
-        )}
+        <div className="flex flex-col items-start gap-1.5">
+          {item.latestAnalysis ? (
+            <div className="flex flex-wrap gap-1">
+              <Tag className={sentimentClass(item.latestAnalysis.sentiment)}>
+                {titleCase(item.latestAnalysis.sentiment)}
+              </Tag>
+              <Tag className={priorityClass(item.latestAnalysis.priority)}>
+                {titleCase(item.latestAnalysis.priority)}
+              </Tag>
+            </div>
+          ) : (
+            <span className="text-zinc-400">Not analysed</span>
+          )}
+          <button
+            type="button"
+            onClick={onAnalyze}
+            disabled={analyzing}
+            className="text-xs font-medium text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-zinc-400 dark:text-blue-400"
+          >
+            {analyzing
+              ? "Analysing…"
+              : item.latestAnalysis
+                ? "Re-analyse"
+                : "Analyse"}
+          </button>
+        </div>
       </td>
       <td className="px-4 py-3 whitespace-nowrap text-zinc-500 dark:text-zinc-400">
         {formatDate(item.createdAt)}

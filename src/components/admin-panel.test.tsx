@@ -12,6 +12,7 @@ vi.mock("@/components/auth-provider", () => ({
 // Keep the embedded FeedbackTable from hitting the network.
 vi.mock("@/lib/feedback", () => ({
   FEEDBACK_STATUSES: ["pending", "reviewed", "actioned", "archived"],
+  analyzeFeedback: vi.fn(),
   listFeedback: vi.fn().mockResolvedValue({
     data: [],
     page: 1,
