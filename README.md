@@ -158,3 +158,53 @@ docker compose up --build
 
 `NEXT_PUBLIC_API_URL` is baked at **build** time (Next inlines `NEXT_PUBLIC_*`),
 so it's passed as a build arg — see `docker-compose.yml` / `Dockerfile`.
+
+---
+
+## Packages reference
+
+Short notes on every package we explicitly depend on, for future reference.
+
+### Runtime
+
+| Package               | What it does                                                                             |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `next`                | The React framework — App Router, server/client components, routing, build & dev server. |
+| `react` / `react-dom` | UI library and its DOM renderer.                                                         |
+| `react-hook-form`     | Performant form state management (uncontrolled inputs, minimal re-renders).              |
+| `@hookform/resolvers` | Adapter that lets react-hook-form validate with a Zod schema.                            |
+| `zod`                 | Schema declaration + validation. One source of truth for form rules and types.           |
+| `@t3-oss/env-nextjs`  | Type-safe, validated env vars — fails fast on missing/invalid config (see `src/env.ts`). |
+
+### Styling
+
+| Package                       | What it does                                                |
+| ----------------------------- | ----------------------------------------------------------- |
+| `tailwindcss`                 | Utility-first CSS framework (v4).                           |
+| `@tailwindcss/postcss`        | The PostCSS plugin that compiles Tailwind v4.               |
+| `prettier-plugin-tailwindcss` | Sorts Tailwind class names in a consistent order on format. |
+
+### Testing
+
+| Package                       | What it does                                              |
+| ----------------------------- | --------------------------------------------------------- |
+| `vitest`                      | Fast unit-test runner (Vite-native).                      |
+| `@vitejs/plugin-react`        | Lets Vitest transform JSX/React for tests.                |
+| `jsdom`                       | Headless DOM so component tests run without a browser.    |
+| `@testing-library/react`      | Render components and query them the way a user would.    |
+| `@testing-library/jest-dom`   | Extra DOM matchers (`toBeInTheDocument`, etc.).           |
+| `@testing-library/user-event` | Simulates realistic user interactions (typing, clicking). |
+| `@playwright/test`            | End-to-end browser testing.                               |
+
+### Tooling
+
+| Package                  | What it does                                                |
+| ------------------------ | ----------------------------------------------------------- |
+| `typescript`             | The language + type checker.                                |
+| `eslint`                 | Linter.                                                     |
+| `eslint-config-next`     | Next.js's recommended ESLint rules (incl. core-web-vitals). |
+| `eslint-config-prettier` | Turns off ESLint rules that conflict with Prettier.         |
+| `prettier`               | Code formatter.                                             |
+| `husky`                  | Git hooks (runs lint-staged pre-commit).                    |
+| `lint-staged`            | Runs lint/format only on staged files.                      |
+| `@types/*`               | TypeScript type definitions for node/react.                 |

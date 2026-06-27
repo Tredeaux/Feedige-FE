@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Comprehensive `README` — tech stack, architecture/data-flow, run instructions, API contract,
+  and a "Packages reference" section summarising every explicit dependency.
 - `docs/` engineering folder — architecture, conventions, decision log (ADRs), and a
   "adding a feature" playbook — as the source of truth for FE design decisions and rules.
   Wired into `AGENTS.md` so AI tools discover it.
