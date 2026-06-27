@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Top navigation tabs (Feedback / Admin) via a `TabNav` component in the root layout, with
+  active-route highlighting. New `/admin` route scaffolds the triage/admin panel (placeholder
+  until the backend list endpoint exists). Component test for the tabs.
 - `docs/engineering-standards.md` — senior engineering expectations & review checklist (the bar
   we hold work to). Linked from `AGENTS.md` and the docs index so AI tools self-check against it.
 - Comprehensive `README` — tech stack, architecture/data-flow, run instructions, API contract,
