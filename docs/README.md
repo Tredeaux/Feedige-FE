@@ -17,12 +17,13 @@ already exists.
 
 ## Contents
 
-| Doc                                        | What's in it                                                                       |
-| ------------------------------------------ | ---------------------------------------------------------------------------------- |
-| [architecture.md](architecture.md)         | Folder layout, the rendering model, data flow, where things live                   |
-| [conventions.md](conventions.md)           | The rules: components, forms/validation, env, API access, styling, testing, naming |
-| [decisions.md](decisions.md)               | Why we chose what we chose (and the alternatives we rejected)                      |
-| [adding-a-feature.md](adding-a-feature.md) | Step-by-step playbook + checklist for consistent additions                         |
+| Doc                                                  | What's in it                                                                       |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [architecture.md](architecture.md)                   | Folder layout, the rendering model, data flow, where things live                   |
+| [conventions.md](conventions.md)                     | The rules: components, forms/validation, env, API access, styling, testing, naming |
+| [decisions.md](decisions.md)                         | Why we chose what we chose (and the alternatives we rejected)                      |
+| [adding-a-feature.md](adding-a-feature.md)           | Step-by-step playbook + checklist for consistent additions                         |
+| [engineering-standards.md](engineering-standards.md) | Senior expectations & review checklist — the bar we hold work to                   |
 
 ## The short version
 

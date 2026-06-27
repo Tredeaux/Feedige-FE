@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `docs/engineering-standards.md` — senior engineering expectations & review checklist (the bar
+  we hold work to). Linked from `AGENTS.md` and the docs index so AI tools self-check against it.
 - Comprehensive `README` — tech stack, architecture/data-flow, run instructions, API contract,
   and a "Packages reference" section summarising every explicit dependency.
 - `docs/` engineering folder — architecture, conventions, decision log (ADRs), and a
