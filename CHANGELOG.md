@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Editable status per row in the triage table — a dropdown that changes a feedback item's status
+  (`PATCH /api/v1/feedback/:id/status`, audited on the backend) and refreshes.
 - "Analyse" / "Re-analyse" action per row in the triage table — triggers the backend AI
   analysis (`POST /api/v1/feedback/:id/analyze`), then refreshes to show the new
   sentiment/priority tags. Per-row loading state and a clear message when AI isn't configured.

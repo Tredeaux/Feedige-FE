@@ -117,6 +117,17 @@ export async function analyzeFeedback(id: string): Promise<void> {
   await apiFetch<unknown>(`/feedback/${id}/analyze`, { method: "POST" });
 }
 
+/** Change a feedback item's triage status (requires a triage/admin token). */
+export async function updateFeedbackStatus(
+  id: string,
+  status: string,
+): Promise<void> {
+  await apiFetch<unknown>(`/feedback/${id}/status`, {
+    method: "PATCH",
+    body: { status },
+  });
+}
+
 /** Fetch the paginated triage list (requires a triage/admin token). */
 export async function listFeedback(
   query: ListFeedbackQuery,

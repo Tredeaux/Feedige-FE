@@ -41,10 +41,11 @@ describe("FeedbackTable", () => {
       await screen.findByText(/export keeps timing out/i),
     ).toBeInTheDocument();
     expect(screen.getByText("sam@example.com")).toBeInTheDocument();
-    // Scope to the row tag (a <span>) — "Pending" also appears in the filter <option>.
-    expect(
-      screen.getByText("Pending", { selector: "span" }),
-    ).toBeInTheDocument();
+    // Status is an editable <select> reflecting the row's current status.
+    const statusSelect = screen.getByLabelText(
+      "Status for f1",
+    ) as HTMLSelectElement;
+    expect(statusSelect.value).toBe("pending");
     expect(screen.getByText("High")).toBeInTheDocument();
     expect(screen.getByText(/Page 1 of 1 · 1 total/)).toBeInTheDocument();
   });

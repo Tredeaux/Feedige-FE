@@ -9,6 +9,7 @@ import {
   type PaginatedFeedback,
   analyzeFeedback,
   listFeedback,
+  updateFeedbackStatus,
 } from "@/lib/feedback";
 
 const PAGE_SIZE = 20;
@@ -28,6 +29,7 @@ export function FeedbackTable() {
   // Analyze action: per-row in-flight id, a transient error, and a refresh key
   // that re-runs the list fetch after a successful analysis.
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -87,6 +89,19 @@ export function FeedbackTable() {
       );
     } finally {
       setAnalyzingId(null);
+    }
+  }
+
+  async function changeRowStatus(id: string, next: string): Promise<void> {
+    setActionError(null);
+    setUpdatingStatusId(id);
+    try {
+      await updateFeedbackStatus(id, next);
+      setRefreshKey((k) => k + 1);
+    } catch {
+      setActionError("Couldn't update status. Please try again.");
+    } finally {
+      setUpdatingStatusId(null);
     }
   }
 
@@ -180,7 +195,9 @@ export function FeedbackTable() {
                   key={item.id}
                   item={item}
                   analyzing={analyzingId === item.id}
+                  updatingStatus={updatingStatusId === item.id}
                   onAnalyze={() => void analyze(item.id)}
+                  onChangeStatus={(next) => void changeRowStatus(item.id, next)}
                 />
               ))
             )}
@@ -215,11 +232,15 @@ export function FeedbackTable() {
 function Row({
   item,
   analyzing,
+  updatingStatus,
   onAnalyze,
+  onChangeStatus,
 }: {
   item: FeedbackListItem;
   analyzing: boolean;
+  updatingStatus: boolean;
   onAnalyze: () => void;
+  onChangeStatus: (next: string) => void;
 }) {
   return (
     <tr className="align-top transition-colors hover:bg-black/[.02] dark:hover:bg-white/[.03]">
@@ -244,7 +265,19 @@ function Row({
         )}
       </td>
       <td className="px-4 py-3">
-        <Tag className={statusClass(item.status)}>{titleCase(item.status)}</Tag>
+        <select
+          value={item.status}
+          disabled={updatingStatus}
+          onChange={(e) => onChangeStatus(e.target.value)}
+          aria-label={`Status for ${item.id}`}
+          className={`rounded-full border-0 px-2 py-1 text-xs font-medium outline-none disabled:opacity-50 ${statusClass(item.status)}`}
+        >
+          {FEEDBACK_STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {titleCase(s)}
+            </option>
+          ))}
+        </select>
       </td>
       <td className="px-4 py-3">
         <div className="flex flex-col items-start gap-1.5">
