@@ -1,4 +1,5 @@
 import { env } from "@/env";
+import { getToken } from "@/lib/auth-token";
 
 /** Thrown when the backend responds with a non-2xx status. */
 export class ApiError extends Error {
@@ -27,10 +28,17 @@ export async function apiFetch<T>(
   const { body, headers, ...rest } = options;
   const url = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 
+  // Attach the bearer token when the user is signed in.
+  const token = getToken();
+  const authHeader: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+
   const response = await fetch(url, {
     ...rest,
     headers: {
       "Content-Type": "application/json",
+      ...authHeader,
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,

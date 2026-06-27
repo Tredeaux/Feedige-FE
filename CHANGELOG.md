@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Admin panel authentication: sign-in / sign-up forms gating the `/admin` panel, an
+  `AuthProvider` context (`useAuth`) that stores the JWT and rehydrates the session from
+  `/auth/me`, and a token store (`src/lib/auth-token.ts`) wired into `apiFetch` as a Bearer
+  header. Validated with Zod + react-hook-form; sign-out clears the session. Component test
+  for the form toggle.
 - Top navigation tabs (Feedback / Admin) via a `TabNav` component in the root layout, with
   active-route highlighting. New `/admin` route scaffolds the triage/admin panel (placeholder
   until the backend list endpoint exists). Component test for the tabs.

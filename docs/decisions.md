@@ -7,6 +7,27 @@ Format: **Decision → Why → Rejected alternative (when it would win).**
 
 ---
 
+## Client auth: JWT in localStorage + AuthProvider context
+
+**Decision:** The admin panel auths against the backend's self-hosted JWT endpoints.
+The token is stored in `localStorage` (`src/lib/auth-token.ts`), attached as a Bearer
+header by `apiFetch`, and session state lives in an `AuthProvider` context
+(`useAuth`) that rehydrates from `/auth/me` on mount. The admin page renders sign
+in/up forms when unauthenticated and the panel when authenticated.
+
+**Why:** Simplest contract across the separate FE/BE origins; no external auth, per
+the requirement. Context keeps auth state in one place; rehydration via `/auth/me`
+survives reloads.
+
+**Trade-off / hardening:** `localStorage` is XSS-readable. For production, switch to
+an httpOnly Secure cookie (set by the BE), which also removes the manual Bearer
+wiring. Add refresh-token rotation and route-level guards (middleware) then.
+
+**Rejected:** httpOnly cookies now (more cross-origin setup than "simple" warrants in
+dev); a data library (TanStack Query) for auth state (overkill for one session object).
+
+---
+
 ## Sequential field unlocking for the feedback form
 
 **Decision:** On the feedback form, fields unlock one at a time — email is disabled
