@@ -12,6 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Admin **Dashboard** view with analytics — stat cards (total / analyzed / backlog / avg
+  confidence) and bar charts for sentiment, priority, and status, plus a top-themes list
+  (from `GET /api/v1/feedback/stats`). The admin area is now split into **Dashboard** and
+  **All feedback** sub-tabs behind a shared auth gate (`/admin`, `/admin/feedback`).
+
+### Changed
+
+- Refactored admin gating into a shared `AdminGate` (used by the admin layout); the feedback
+  table moved to `/admin/feedback`. Replaces the single `AdminPanel` component.
+
 - Editable status per row in the triage table — a dropdown that changes a feedback item's status
   (`PATCH /api/v1/feedback/:id/status`, audited on the backend) and refreshes.
 - "Analyse" / "Re-analyse" action per row in the triage table — triggers the backend AI

@@ -128,6 +128,28 @@ export async function updateFeedbackStatus(
   });
 }
 
+// ---- Dashboard stats (GET /feedback/stats) ----
+
+const countBucketSchema = z.object({ label: z.string(), count: z.number() });
+
+const feedbackStatsSchema = z.object({
+  totalFeedback: z.number(),
+  analyzedFeedback: z.number(),
+  unanalyzedFeedback: z.number(),
+  averageConfidence: z.number().nullable(),
+  byStatus: z.array(countBucketSchema),
+  bySentiment: z.array(countBucketSchema),
+  byPriority: z.array(countBucketSchema),
+  topThemes: z.array(z.object({ theme: z.string(), count: z.number() })),
+});
+
+export type FeedbackStats = z.infer<typeof feedbackStatsSchema>;
+
+/** Fetch dashboard analytics (requires a triage/admin token). */
+export async function getFeedbackStats(): Promise<FeedbackStats> {
+  return feedbackStatsSchema.parse(await apiFetch<unknown>("/feedback/stats"));
+}
+
 /** Fetch the paginated triage list (requires a triage/admin token). */
 export async function listFeedback(
   query: ListFeedbackQuery,
