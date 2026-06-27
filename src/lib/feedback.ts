@@ -141,6 +141,7 @@ const feedbackStatsSchema = z.object({
   bySentiment: z.array(countBucketSchema),
   byPriority: z.array(countBucketSchema),
   topThemes: z.array(z.object({ theme: z.string(), count: z.number() })),
+  volumeByDay: z.array(z.object({ date: z.string(), count: z.number() })),
 });
 
 export type FeedbackStats = z.infer<typeof feedbackStatsSchema>;

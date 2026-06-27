@@ -91,6 +91,9 @@ export function Dashboard() {
         />
       </div>
 
+      {/* Volume over time */}
+      <VolumeChart data={stats.volumeByDay} />
+
       {/* Top themes */}
       <div className="rounded-lg border border-black/10 p-4 dark:border-white/15">
         <h2 className="mb-3 text-sm font-semibold">Top themes</h2>
@@ -116,6 +119,46 @@ export function Dashboard() {
       </div>
     </div>
   );
+}
+
+function VolumeChart({ data }: { data: { date: string; count: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.count));
+  const total = data.reduce((sum, d) => sum + d.count, 0);
+
+  return (
+    <div className="rounded-lg border border-black/10 p-4 dark:border-white/15">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 className="text-sm font-semibold">Feedback volume</h2>
+        <span className="text-xs text-zinc-400">
+          last {data.length} days · {total} total
+        </span>
+      </div>
+      <div className="flex h-28 items-end gap-[2px]">
+        {data.map((d) => (
+          <div
+            key={d.date}
+            className="group relative flex-1"
+            title={`${d.date}: ${d.count}`}
+          >
+            <div
+              className="w-full rounded-sm bg-blue-500/70 transition-colors group-hover:bg-blue-500"
+              style={{ height: `${Math.max(2, (d.count / max) * 100)}%` }}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 flex justify-between text-[0.65rem] text-zinc-400">
+        <span>{formatShort(data[0]?.date)}</span>
+        <span>{formatShort(data[data.length - 1]?.date)}</span>
+      </div>
+    </div>
+  );
+}
+
+function formatShort(iso: string | undefined): string {
+  if (!iso) return "";
+  const d = new Date(`${iso}T00:00:00`);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function StatCard({

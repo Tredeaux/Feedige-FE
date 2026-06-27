@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Admin **Dashboard** view with analytics — stat cards (total / analyzed / backlog / avg
-  confidence) and bar charts for sentiment, priority, and status, plus a top-themes list
-  (from `GET /api/v1/feedback/stats`). The admin area is now split into **Dashboard** and
+  confidence), bar charts for sentiment / priority / status, a **30-day feedback-volume
+  time-series**, and a top-themes list (from `GET /api/v1/feedback/stats`). The admin area is now split into **Dashboard** and
   **All feedback** sub-tabs behind a shared auth gate (`/admin`, `/admin/feedback`).
 
 ### Changed

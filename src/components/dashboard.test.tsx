@@ -25,6 +25,10 @@ const stats: FeedbackStats = {
   ],
   byPriority: [{ label: "high", count: 3 }],
   topThemes: [{ theme: "performance", count: 5 }],
+  volumeByDay: [
+    { date: "2026-06-26", count: 2 },
+    { date: "2026-06-27", count: 8 },
+  ],
 };
 
 describe("Dashboard", () => {
@@ -39,5 +43,6 @@ describe("Dashboard", () => {
     expect(screen.getByText("Priority")).toBeInTheDocument();
     expect(screen.getByText("Top themes")).toBeInTheDocument();
     expect(screen.getByText("performance")).toBeInTheDocument();
+    expect(screen.getByText("Feedback volume")).toBeInTheDocument();
   });
 });
