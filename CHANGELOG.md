@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `docs/` engineering folder — architecture, conventions, decision log (ADRs), and a
+  "adding a feature" playbook — as the source of truth for FE design decisions and rules.
+  Wired into `AGENTS.md` so AI tools discover it.
 - Feedback submission form as the index page (`/`): name, email, and feedback fields that
   **unlock in sequence** as each prior field becomes valid, guiding the user step by step.
 - Clean per-field validation with Zod (`src/lib/feedback.ts`) and react-hook-form; inline
