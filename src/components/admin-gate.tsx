@@ -9,6 +9,8 @@ import { PANEL_ROLES } from "@/lib/auth";
 const subTabs = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/feedback", label: "All feedback" },
+  { href: "/admin/jobs", label: "Background job" },
+  { href: "/admin/logs", label: "Logs" },
 ];
 
 /**

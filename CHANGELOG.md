@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Admin **Background job** tab (`/admin/jobs`) — a live status card (health, schedule, next-run
+  countdown, totals) plus a log-format run history with timestamps, outcome, detail, and duration;
+  auto-refreshes every 15s and filters by outcome.
+- Admin **Logs** tab (`/admin/logs`) — a filterable audit-log table (search, action dropdown, date
+  range) with actor, target, and old→new change diffs, paginated.
 - Admin **Dashboard** view with analytics — stat cards (total / analyzed / backlog / avg
   confidence), bar charts for sentiment / priority / status, a **30-day feedback-volume
   time-series**, and a top-themes list (from `GET /api/v1/feedback/stats`). The admin area is now split into **Dashboard** and
