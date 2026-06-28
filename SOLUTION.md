@@ -118,6 +118,24 @@ a security boundary it doesn't provide.
 
 ---
 
+## Scaling the frontend (under load)
+
+The full system-scaling plan is in the
+[canonical write-up §7](https://github.com/Tredeaux/Feedige-BE/blob/main/SOLUTION.md#7-scaling-to-production-under-load).
+On the frontend specifically:
+
+- **Serve from a CDN** with edge caching for static/ISR content; the app is
+  largely Server Components, so most of it caches well.
+- **Cursor-based pagination** for the heavy admin tables — offset pagination
+  degrades on large datasets.
+- **Adopt React Query/SWR** once the data surface justifies shared caching and
+  background revalidation (today a thin `apiFetch` + local state is enough).
+- **Switch the job monitor from polling to SSE/WebSocket** if many triagers watch
+  it at once or the cadence increases — polling is deliberately fine at current
+  fan-out.
+
+---
+
 ## Testing & running
 
 - **Unit:** Vitest + Testing Library (e.g. the feedback form's validation/flow).
