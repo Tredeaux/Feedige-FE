@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Modal } from "@/components/modal";
 import { ApiError } from "@/lib/api";
 import {
+  FEEDBACK_PRIORITIES,
+  FEEDBACK_SENTIMENTS,
   FEEDBACK_STATUSES,
   type FeedbackListItem,
   type FeedbackSortField,
@@ -13,12 +16,17 @@ import {
 } from "@/lib/feedback";
 
 const PAGE_SIZE = 20;
+const SOURCES = ["web", "email"] as const;
 
 export function FeedbackTable() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [source, setSource] = useState("");
+  const [sentiment, setSentiment] = useState("");
+  const [priority, setPriority] = useState("");
+  const [analyzed, setAnalyzed] = useState(""); // "", "true", "false"
   const [sortBy, setSortBy] = useState<FeedbackSortField>("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
@@ -26,14 +34,16 @@ export function FeedbackTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Analyze action: per-row in-flight id, a transient error, and a refresh key
-  // that re-runs the list fetch after a successful analysis.
-  const [analyzingId, setAnalyzingId] = useState<string | null>(null);
-  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Debounce the search input; reset to the first page when it changes.
+  // Modal targets
+  const [messageItem, setMessageItem] = useState<FeedbackListItem | null>(null);
+  const [analysisItem, setAnalysisItem] = useState<FeedbackListItem | null>(
+    null,
+  );
+
   useEffect(() => {
     const id = setTimeout(() => {
       setDebouncedSearch(search);
@@ -52,6 +62,10 @@ export function FeedbackTable() {
           page,
           pageSize: PAGE_SIZE,
           status: status || undefined,
+          source: source || undefined,
+          sentiment: sentiment || undefined,
+          priority: priority || undefined,
+          analyzed: analyzed === "" ? undefined : analyzed === "true",
           search: debouncedSearch || undefined,
           sortBy,
           sortOrder,
@@ -73,41 +87,45 @@ export function FeedbackTable() {
     return () => {
       active = false;
     };
-  }, [page, debouncedSearch, status, sortBy, sortOrder, refreshKey]);
+  }, [
+    page,
+    debouncedSearch,
+    status,
+    source,
+    sentiment,
+    priority,
+    analyzed,
+    sortBy,
+    sortOrder,
+    refreshKey,
+  ]);
 
-  async function analyze(id: string): Promise<void> {
+  async function runAction(
+    id: string,
+    fn: () => Promise<void>,
+    failMsg: string,
+  ): Promise<void> {
     setActionError(null);
-    setAnalyzingId(id);
+    setBusyId(id);
     try {
-      await analyzeFeedback(id);
-      setRefreshKey((k) => k + 1); // reload to show the new analysis
+      await fn();
+      setRefreshKey((k) => k + 1);
     } catch (err) {
       setActionError(
         err instanceof ApiError && err.status === 503
           ? "AI analysis isn't configured (set OPENAI_API_KEY on the backend)."
-          : "Analysis failed. Please try again.",
+          : failMsg,
       );
     } finally {
-      setAnalyzingId(null);
+      setBusyId(null);
     }
   }
 
-  async function changeRowStatus(id: string, next: string): Promise<void> {
-    setActionError(null);
-    setUpdatingStatusId(id);
-    try {
-      await updateFeedbackStatus(id, next);
-      setRefreshKey((k) => k + 1);
-    } catch {
-      setActionError("Couldn't update status. Please try again.");
-    } finally {
-      setUpdatingStatusId(null);
-    }
-  }
-
-  function changeStatus(value: string): void {
-    setStatus(value);
-    setPage(1);
+  function resetTo(setter: (v: string) => void) {
+    return (value: string) => {
+      setter(value);
+      setPage(1);
+    };
   }
 
   function toggleSort(field: FeedbackSortField): void {
@@ -126,28 +144,49 @@ export function FeedbackTable() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
         <input
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search feedback or submitter…"
           aria-label="Search feedback"
-          className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm outline-none placeholder:text-zinc-400 focus:border-black/30 sm:max-w-xs dark:border-white/15 dark:bg-zinc-900 dark:focus:border-white/40"
+          className={`${controlClass} w-full sm:w-64`}
+        />
+        <FilterSelect
+          label="Status"
+          value={status}
+          onChange={resetTo(setStatus)}
+          options={FEEDBACK_STATUSES}
+        />
+        <FilterSelect
+          label="Sentiment"
+          value={sentiment}
+          onChange={resetTo(setSentiment)}
+          options={FEEDBACK_SENTIMENTS}
+        />
+        <FilterSelect
+          label="Priority"
+          value={priority}
+          onChange={resetTo(setPriority)}
+          options={FEEDBACK_PRIORITIES}
+        />
+        <FilterSelect
+          label="Source"
+          value={source}
+          onChange={resetTo(setSource)}
+          options={SOURCES}
         />
         <select
-          value={status}
-          onChange={(e) => changeStatus(e.target.value)}
-          aria-label="Filter by status"
-          className="rounded-md border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-black/30 dark:border-white/15 dark:bg-zinc-900 dark:focus:border-white/40"
+          value={analyzed}
+          onChange={(e) => resetTo(setAnalyzed)(e.target.value)}
+          aria-label="Filter by analysis state"
+          className={controlClass}
         >
-          <option value="">All statuses</option>
-          {FEEDBACK_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {titleCase(s)}
-            </option>
-          ))}
+          <option value="">Any analysis</option>
+          <option value="true">Analyzed</option>
+          <option value="false">Not analyzed</option>
         </select>
       </div>
 
@@ -167,19 +206,21 @@ export function FeedbackTable() {
             <tr>
               <th className="px-4 py-3 font-medium">Feedback</th>
               <th className="px-4 py-3 font-medium">Submitter</th>
+              <th className="px-4 py-3 font-medium">Sentiment</th>
+              <th className="px-4 py-3 font-medium">Priority</th>
               <SortableHeader
                 label="Status"
                 active={sortBy === "status"}
                 order={sortOrder}
                 onClick={() => toggleSort("status")}
               />
-              <th className="px-4 py-3 font-medium">Analysis</th>
               <SortableHeader
                 label="Submitted"
                 active={sortBy === "createdAt"}
                 order={sortOrder}
                 onClick={() => toggleSort("createdAt")}
               />
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-black/5 dark:divide-white/10">
@@ -194,10 +235,30 @@ export function FeedbackTable() {
                 <Row
                   key={item.id}
                   item={item}
-                  analyzing={analyzingId === item.id}
-                  updatingStatus={updatingStatusId === item.id}
-                  onAnalyze={() => void analyze(item.id)}
-                  onChangeStatus={(next) => void changeRowStatus(item.id, next)}
+                  busy={busyId === item.id}
+                  onViewMessage={() => setMessageItem(item)}
+                  onViewAnalysis={() => setAnalysisItem(item)}
+                  onChangeStatus={(next) =>
+                    void runAction(
+                      item.id,
+                      () => updateFeedbackStatus(item.id, next),
+                      "Couldn't update status. Please try again.",
+                    )
+                  }
+                  onAnalyze={() =>
+                    void runAction(
+                      item.id,
+                      () => analyzeFeedback(item.id),
+                      "Analysis failed. Please try again.",
+                    )
+                  }
+                  onArchive={() =>
+                    void runAction(
+                      item.id,
+                      () => updateFeedbackStatus(item.id, "archived"),
+                      "Couldn't archive. Please try again.",
+                    )
+                  }
                 />
               ))
             )}
@@ -225,29 +286,43 @@ export function FeedbackTable() {
           />
         </div>
       </div>
+
+      <MessageModal item={messageItem} onClose={() => setMessageItem(null)} />
+      <AnalysisModal
+        item={analysisItem}
+        onClose={() => setAnalysisItem(null)}
+      />
     </div>
   );
 }
 
 function Row({
   item,
-  analyzing,
-  updatingStatus,
-  onAnalyze,
+  busy,
+  onViewMessage,
+  onViewAnalysis,
   onChangeStatus,
+  onAnalyze,
+  onArchive,
 }: {
   item: FeedbackListItem;
-  analyzing: boolean;
-  updatingStatus: boolean;
-  onAnalyze: () => void;
+  busy: boolean;
+  onViewMessage: () => void;
+  onViewAnalysis: () => void;
   onChangeStatus: (next: string) => void;
+  onAnalyze: () => void;
+  onArchive: () => void;
 }) {
+  const a = item.latestAnalysis;
   return (
     <tr className="align-top transition-colors hover:bg-black/[.02] dark:hover:bg-white/[.03]">
-      <td className="max-w-md px-4 py-3">
-        <p className="line-clamp-2 text-black dark:text-white">
-          {item.rawText}
-        </p>
+      <td className="max-w-xs px-4 py-3">
+        <div className="flex items-start gap-2">
+          <p className="truncate text-black dark:text-white">{item.rawText}</p>
+          <IconButton label="View full message" onClick={onViewMessage}>
+            <EyeIcon />
+          </IconButton>
+        </div>
         <span className="text-xs text-zinc-400">{item.source}</span>
       </td>
       <td className="px-4 py-3">
@@ -265,9 +340,27 @@ function Row({
         )}
       </td>
       <td className="px-4 py-3">
+        {a ? (
+          <Tag className={sentimentClass(a.sentiment)}>
+            {titleCase(a.sentiment)}
+          </Tag>
+        ) : (
+          <span className="text-zinc-400">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3">
+        {a ? (
+          <Tag className={priorityClass(a.priority)}>
+            {titleCase(a.priority)}
+          </Tag>
+        ) : (
+          <span className="text-zinc-400">—</span>
+        )}
+      </td>
+      <td className="px-4 py-3">
         <select
           value={item.status}
-          disabled={updatingStatus}
+          disabled={busy}
           onChange={(e) => onChangeStatus(e.target.value)}
           aria-label={`Status for ${item.id}`}
           className={`rounded-full border-0 px-2 py-1 text-xs font-medium outline-none disabled:opacity-50 ${statusClass(item.status)}`}
@@ -279,38 +372,188 @@ function Row({
           ))}
         </select>
       </td>
-      <td className="px-4 py-3">
-        <div className="flex flex-col items-start gap-1.5">
-          {item.latestAnalysis ? (
-            <div className="flex flex-wrap gap-1">
-              <Tag className={sentimentClass(item.latestAnalysis.sentiment)}>
-                {titleCase(item.latestAnalysis.sentiment)}
-              </Tag>
-              <Tag className={priorityClass(item.latestAnalysis.priority)}>
-                {titleCase(item.latestAnalysis.priority)}
-              </Tag>
-            </div>
-          ) : (
-            <span className="text-zinc-400">Not analysed</span>
-          )}
-          <button
-            type="button"
-            onClick={onAnalyze}
-            disabled={analyzing}
-            className="text-xs font-medium text-blue-600 hover:underline disabled:cursor-not-allowed disabled:text-zinc-400 dark:text-blue-400"
-          >
-            {analyzing
-              ? "Analysing…"
-              : item.latestAnalysis
-                ? "Re-analyse"
-                : "Analyse"}
-          </button>
-        </div>
-      </td>
       <td className="px-4 py-3 whitespace-nowrap text-zinc-500 dark:text-zinc-400">
         {formatDate(item.createdAt)}
       </td>
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-1">
+          <IconButton
+            label="View AI analysis"
+            onClick={onViewAnalysis}
+            disabled={!a}
+          >
+            <EyeIcon />
+          </IconButton>
+          <button
+            type="button"
+            onClick={onAnalyze}
+            disabled={busy}
+            className="rounded-md px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:text-zinc-400 dark:text-blue-400 dark:hover:bg-blue-950/40"
+          >
+            {busy ? "…" : a ? "Re-analyse" : "Analyse"}
+          </button>
+          {item.status !== "archived" && (
+            <button
+              type="button"
+              onClick={onArchive}
+              disabled={busy}
+              className="rounded-md px-2 py-1 text-xs font-medium text-zinc-500 hover:bg-black/5 disabled:cursor-not-allowed disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-white/10"
+            >
+              Archive
+            </button>
+          )}
+        </div>
+      </td>
     </tr>
+  );
+}
+
+function MessageModal({
+  item,
+  onClose,
+}: {
+  item: FeedbackListItem | null;
+  onClose: () => void;
+}) {
+  return (
+    <Modal open={item !== null} title="Feedback" onClose={onClose}>
+      {item && (
+        <div className="flex flex-col gap-4">
+          <p className="text-sm whitespace-pre-wrap text-black dark:text-white">
+            {item.rawText}
+          </p>
+          <dl className="grid grid-cols-2 gap-2 border-t border-black/10 pt-4 text-sm dark:border-white/15">
+            <Meta label="Submitter">
+              {item.submittedBy?.name ?? item.submittedBy?.email ?? "Anonymous"}
+            </Meta>
+            <Meta label="Source">{item.source}</Meta>
+            <Meta label="Status">{titleCase(item.status)}</Meta>
+            <Meta label="Submitted">{formatDate(item.createdAt)}</Meta>
+          </dl>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function AnalysisModal({
+  item,
+  onClose,
+}: {
+  item: FeedbackListItem | null;
+  onClose: () => void;
+}) {
+  const a = item?.latestAnalysis ?? null;
+  return (
+    <Modal
+      open={item !== null && a !== null}
+      title="AI analysis"
+      onClose={onClose}
+    >
+      {a && (
+        <div className="flex flex-col gap-4 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <Tag className={sentimentClass(a.sentiment)}>
+              {titleCase(a.sentiment)}
+            </Tag>
+            <Tag className={priorityClass(a.priority)}>
+              {titleCase(a.priority)} priority
+            </Tag>
+            <span className="text-xs text-zinc-400">
+              {Math.round(a.confidence * 100)}% confidence
+            </span>
+          </div>
+
+          {a.summary && (
+            <div>
+              <h3 className="mb-1 text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+                Summary
+              </h3>
+              <p className="text-black dark:text-white">{a.summary}</p>
+            </div>
+          )}
+
+          {a.keyThemes.length > 0 && (
+            <div>
+              <h3 className="mb-1.5 text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+                Key themes
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {a.keyThemes.map((t) => (
+                  <span
+                    key={t}
+                    className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs dark:bg-zinc-800"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {a.recommendedActions.length > 0 && (
+            <div>
+              <h3 className="mb-1.5 text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+                Recommended actions
+              </h3>
+              <ul className="list-disc space-y-1 pl-5 text-black dark:text-white">
+                {a.recommendedActions.map((action, i) => (
+                  <li key={i}>{action}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <div className="border-t border-black/10 pt-3 text-xs text-zinc-400 dark:border-white/15">
+            Model {a.modelUsed} · version {a.version} ·{" "}
+            {formatDate(a.analyzedAt)}
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function Meta({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <dt className="text-xs text-zinc-400">{label}</dt>
+      <dd className="text-black dark:text-white">{children}</dd>
+    </div>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: readonly string[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      aria-label={`Filter by ${label.toLowerCase()}`}
+      className={controlClass}
+    >
+      <option value="">All {label.toLowerCase()}</option>
+      {options.map((o) => (
+        <option key={o} value={o}>
+          {titleCase(o)}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -350,12 +593,56 @@ function StateRow({ text }: { text: string }) {
   return (
     <tr>
       <td
-        colSpan={5}
+        colSpan={7}
         className="px-4 py-10 text-center text-zinc-500 dark:text-zinc-400"
       >
         {text}
       </td>
     </tr>
+  );
+}
+
+function IconButton({
+  label,
+  onClick,
+  disabled,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-black/5 hover:text-black disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-white/10 dark:hover:text-white"
+    >
+      {children}
+    </button>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }
 
@@ -395,6 +682,9 @@ function PagerButton({
     </button>
   );
 }
+
+const controlClass =
+  "rounded-md border border-black/10 bg-white px-3 py-2 text-sm outline-none placeholder:text-zinc-400 focus:border-black/30 dark:border-white/15 dark:bg-zinc-900 dark:focus:border-white/40";
 
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);

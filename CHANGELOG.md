@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- All-feedback triage table overhaul: added **sentiment / priority / source / analyzed** filters;
+  split the Analysis column into separate **Sentiment** and **Priority** columns; truncated the
+  feedback message with an **eye → full-message modal**; added an **Actions** column (Re-analyse,
+  Archive, and an **eye → AI-analysis modal** showing summary, confidence, key themes, recommended
+  actions). New reusable `Modal` component.
+
 ### Added
 
 - `SOLUTION.md` — frontend solution write-up (architecture, FE-specific decisions/trade-offs,
