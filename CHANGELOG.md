@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Archive, and an **eye → AI-analysis modal** showing summary, confidence, key themes, recommended
   actions). New reusable `Modal` component.
 
+### Changed
+
+- Widened the admin panel container (`max-w-5xl` → `max-w-7xl`) so the data
+  tables (feedback, logs, job runs) fit without horizontal scrolling on typical
+  laptop widths; narrower screens still scroll gracefully.
+
 ### Added
 
 - `SOLUTION.md` — frontend solution write-up (architecture, FE-specific decisions/trade-offs,
