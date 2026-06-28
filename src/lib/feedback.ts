@@ -70,6 +70,9 @@ export const FEEDBACK_STATUSES = [
 ] as const;
 export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
 
+export const FEEDBACK_SENTIMENTS = ["positive", "neutral", "negative"] as const;
+export const FEEDBACK_PRIORITIES = ["low", "medium", "high"] as const;
+
 export const FEEDBACK_SORT_FIELDS = [
   "createdAt",
   "updatedAt",
@@ -81,10 +84,28 @@ export interface ListFeedbackQuery {
   page: number;
   pageSize: number;
   status?: string;
+  source?: string;
+  sentiment?: string;
+  priority?: string;
+  analyzed?: boolean;
   search?: string;
   sortBy: FeedbackSortField;
   sortOrder: "asc" | "desc";
 }
+
+const analysisDetailSchema = z.object({
+  sentiment: z.string(),
+  priority: z.string(),
+  summary: z.string().nullable(),
+  confidence: z.number(),
+  keyThemes: z.array(z.string()),
+  recommendedActions: z.array(z.string()),
+  modelUsed: z.string(),
+  version: z.number(),
+  analyzedAt: z.string(),
+});
+
+export type AnalysisDetail = z.infer<typeof analysisDetailSchema>;
 
 const feedbackListItemSchema = z.object({
   id: z.string(),
@@ -94,9 +115,7 @@ const feedbackListItemSchema = z.object({
   submittedBy: z
     .object({ id: z.string(), name: z.string().nullable(), email: z.string() })
     .nullable(),
-  latestAnalysis: z
-    .object({ sentiment: z.string(), priority: z.string() })
-    .nullable(),
+  latestAnalysis: analysisDetailSchema.nullable(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -162,6 +181,12 @@ export async function listFeedback(
     sortOrder: query.sortOrder,
   });
   if (query.status) params.set("status", query.status);
+  if (query.source) params.set("source", query.source);
+  if (query.sentiment) params.set("sentiment", query.sentiment);
+  if (query.priority) params.set("priority", query.priority);
+  if (query.analyzed !== undefined) {
+    params.set("analyzed", String(query.analyzed));
+  }
   if (query.search) params.set("search", query.search);
 
   const data = await apiFetch<unknown>(`/feedback?${params.toString()}`);

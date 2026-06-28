@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `SOLUTION.md` — frontend solution write-up (architecture, FE-specific decisions/trade-offs,
+  a frontend security note) linking to the canonical full write-up in the backend repo.
 - Admin **Background job** tab (`/admin/jobs`) — a live status card (health, schedule, next-run
   countdown, totals) plus a log-format run history with timestamps, outcome, detail, and duration;
   auto-refreshes every 15s and filters by outcome.
